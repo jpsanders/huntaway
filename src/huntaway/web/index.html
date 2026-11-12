@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="huntaway-token" content="__TOKEN__">
+  <meta name="color-scheme" content="light dark">
+  <title>huntaway</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css?v=__VERSION__">
+  <script>
+    try {
+      const saved = localStorage.getItem("huntaway-theme");
+      const dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", dark);
+    } catch (e) {
+      document.documentElement.classList.toggle("dark", matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+  </script>
+</head>
+<body class="min-h-screen">
+  <div id="app" class="flex min-h-screen">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-ink-100 bg-white px-4 py-5 transition-transform lg:static lg:translate-x-0 dark:border-ink-800 dark:bg-ink-900">
+      <a href="#/overview" class="mb-7 flex items-center gap-3 px-2">
+        <img src="/static/logo.svg" alt="" class="h-9 w-9">
+        <span class="text-lg font-semibold tracking-tight text-ink-900 dark:text-white">huntaway</span>
+      </a>
+      <nav id="nav" class="flex flex-1 flex-col gap-6 overflow-y-auto" aria-label="Main"></nav>
+      <div class="mt-6 rounded-2xl bg-ink-50 p-3 text-xs text-ink-500 dark:bg-ink-850 dark:text-ink-300">
+        <div class="flex items-center gap-2"><span id="svc-dot" class="h-2 w-2 rounded-full bg-ink-300"></span><span id="svc-text">Connecting</span></div>
+        <div class="mt-1 num" id="svc-foot">version __VERSION__</div>
+      </div>
+    </aside>
+    <div id="scrim" class="fixed inset-0 z-30 hidden bg-ink-950/40 lg:hidden"></div>
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="sticky top-0 z-20 flex items-center gap-3 border-b border-ink-100 bg-white/85 px-4 py-3 backdrop-blur sm:px-6 dark:border-ink-800 dark:bg-ink-900/85">
+        <button id="menu" class="btn-ghost btn-sm lg:hidden" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="min-w-0 flex-1">
+          <h1 id="title" class="truncate text-lg font-semibold text-ink-900 dark:text-white">Overview</h1>
+          <p id="subtitle" class="hidden truncate text-xs text-ink-400 sm:block dark:text-ink-300"></p>
+        </div>
+        <form id="search" class="hidden md:block" role="search">
+          <input class="input w-64" type="search" name="q" placeholder="Search saved sessions" aria-label="Search saved sessions">
+        </form>
+        <span id="level" class="chip-mute hidden sm:inline-flex">memory</span>
+        <span id="mode" class="chip-mute hidden sm:inline-flex">mode</span>
+        <span class="hidden items-center gap-2 text-xs text-ink-400 sm:flex dark:text-ink-300"><span id="live" class="h-2 w-2 rounded-full bg-ink-300"></span><span id="live-text">offline</span></span>
+        <button id="theme" class="btn-ghost btn-sm" aria-label="Switch light and dark">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        </button>
+      </header>
+      <main id="page" class="mx-auto w-full max-w-[1400px] flex-1 p-4 sm:p-6" tabindex="-1"></main>
+    </div>
+  </div>
+  <div id="modal" class="fixed inset-0 z-50 hidden items-end justify-center bg-ink-950/50 p-0 sm:items-center sm:p-6" role="dialog" aria-modal="true"></div>
+  <div id="toasts" class="fixed right-4 bottom-4 z-[60] flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2"></div>
+  <script src="/static/app.js?v=__VERSION__" type="module"></script>
+</body>
+</html>

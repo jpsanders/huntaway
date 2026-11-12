@@ -1,0 +1,31 @@
+---
+name: Bug report
+description: Something huntaway did, or did not do, that it should not have
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What huntaway did, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: events
+    attributes:
+      label: The events around it
+      description: Output of `huntaway events --limit 20`. Remove anything private.
+      render: text
+  - type: textarea
+    id: doctor
+    attributes:
+      label: huntaway doctor
+      description: Output of `huntaway doctor` and `huntaway --version`.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Ubuntu 26.04, Fedora 43, macOS 26

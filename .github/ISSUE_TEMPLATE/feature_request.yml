@@ -1,0 +1,16 @@
+---
+name: Feature request
+description: A harness, a check or a behaviour huntaway should have
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What goes wrong on your machine today, with numbers if you have them.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help

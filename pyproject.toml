@@ -1,0 +1,157 @@
+[build-system]
+requires = ["setuptools>=80", "setuptools_scm[toml]>=9"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "huntaway"
+authors = [
+  { name = "James Phillip Sanders", email = "hello@jamesphillipsanders.com" }
+]
+maintainers = [
+  { name = "James Phillip Sanders", email = "hello@jamesphillipsanders.com" }
+]
+description = "The sheepdog for your AI agents. Saves and closes idle agent sessions, stops runaway processes before the machine freezes, and hunts rootkits."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.14"
+keywords = [
+  "ai-agents",
+  "claude-code",
+  "codex",
+  "opencode",
+  "mcp",
+  "process-monitor",
+  "oom",
+  "earlyoom",
+  "rootkit",
+  "rkhunter",
+  "daemon",
+  "dashboard",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: No Input/Output (Daemon)",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "Intended Audience :: System Administrators",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Topic :: Security",
+  "Topic :: System :: Monitoring",
+  "Topic :: System :: Systems Administration",
+  "Typing :: Typed",
+]
+dependencies = ["psutil>=7"]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/jpsanders/huntaway"
+Repository = "https://github.com/jpsanders/huntaway"
+Issues = "https://github.com/jpsanders/huntaway/issues"
+Changelog = "https://github.com/jpsanders/huntaway/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/jpsanders/huntaway/blob/main/docs/MANUAL.md"
+
+[project.optional-dependencies]
+dev = [
+  "bandit[toml]",
+  "black",
+  "build",
+  "darglint",
+  "editorconfig-checker==2.7.2",
+  "flake8",
+  "flake8-pydocstyle",
+  "flake8-tidy-imports",
+  "isort",
+  "mypy>=1.4.1",
+  "pytest",
+  "pytest-cov",
+  "types-psutil",
+]
+
+[project.scripts]
+huntaway = "huntaway.cli:main"
+
+[tool.setuptools_scm]
+fallback_version = "0.0.0"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+huntaway = ["py.typed", "web/*", "data/*"]
+
+[tool.mypy]
+strict = true
+check_untyped_defs = true
+explicit_package_bases = true
+mypy_path = "src"
+cache_dir = "build/.mypy_cache"
+
+# Tests use fakes and monkeypatching on purpose; they are checked, but not held to the strict signatures.
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+implicit_reexport = true
+disable_error_code = ["arg-type", "attr-defined", "union-attr", "assignment", "func-returns-value"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+known_first_party = ["huntaway"]
+
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+exclude = '''
+/(
+      venv
+    | \.git
+    | \.env
+    | \.venv
+    | \.tox
+    | env
+    | venv
+    | dist
+    | build
+)/
+'''
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+# B608: the only SQL built from strings is in store.py, from table and column names the code itself defines;
+# every value goes in as a parameter.
+skips = ["B608"]
+
+[tool.pydocstyle]
+### Ignoring explanation
+# D1 - Missing docstrings (enforced elsewhere)
+# D202 - No blank lines after function docstring
+# D203 - 1 blank line required before class docstring
+# D205 - 1 blank line required between summary line and description
+# D212 - Multi-line docstring summary should start at the first line
+# D406 - Section name should end with newline
+# D407 - Missing dashed underline after section
+# D411 - Missing blank line before section
+# D413 - Missing blank line after last section
+ignore = """
+D1,
+D202,D203,D205,D212,
+D400,D406,D407,D411,D413
+"""
+
+[tool.coverage.run]
+data_file = "build/.coverage"
+omit = ["src/huntaway/__main__.py"]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if __name__ == .__main__.:"]
+
+[tool.pytest.ini_options]
+cache_dir = "build/.pytest_cache"
+testpaths = ["tests"]

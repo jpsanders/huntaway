@@ -1,0 +1,90 @@
+/* The dashboard's styles. Build with: make css (writes src/huntaway/web/app.css). */
+@import "tailwindcss";
+@source "../src/huntaway/web";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-tan-50: #fdf7ee;
+  --color-tan-100: #f8ead2;
+  --color-tan-200: #f1d4a6;
+  --color-tan-300: #e9b872;
+  --color-tan-400: #e4a453;
+  --color-tan-500: #e0953f;
+  --color-tan-600: #c97d2c;
+  --color-tan-700: #a5631f;
+  --color-tan-800: #7f4c1c;
+  --color-cream: #f3e7d3;
+  --color-paper: #f7f4ee;
+  --color-ink-50: #f4f4f6;
+  --color-ink-100: #e6e7ea;
+  --color-ink-200: #cdd0d6;
+  --color-ink-300: #a3a8b3;
+  --color-ink-400: #7a808d;
+  --color-ink-500: #5a5f6b;
+  --color-ink-600: #3a3d46;
+  --color-ink-700: #2a2c33;
+  --color-ink-800: #1d1f25;
+  --color-ink-850: #17191e;
+  --color-ink-900: #111317;
+  --color-ink-950: #0b0c0f;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --shadow-card: 0 1px 2px rgb(17 19 23 / 0.04), 0 1px 3px rgb(17 19 23 / 0.06);
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-paper text-ink-800 dark:bg-ink-950 dark:text-ink-100; font-feature-settings: "cv11", "ss01"; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-tan-500; }
+  ::selection { @apply bg-tan-200 text-ink-900; }
+}
+
+@utility card { @apply rounded-2xl border border-ink-100 bg-white shadow-card dark:border-ink-800 dark:bg-ink-900; }
+@utility card-pad { @apply p-5 sm:p-6; }
+@utility card-title { @apply text-[15px] font-semibold text-ink-900 dark:text-white; }
+@utility card-sub { @apply text-sm text-ink-400 dark:text-ink-300; }
+@utility label { @apply text-xs font-medium uppercase tracking-wider text-ink-400 dark:text-ink-300; }
+@utility num { font-variant-numeric: tabular-nums; }
+@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50; }
+@utility btn-primary { @apply btn bg-ink-900 text-white hover:bg-ink-700 dark:bg-tan-500 dark:text-ink-950 dark:hover:bg-tan-400; }
+@utility btn-tan { @apply btn bg-tan-500 text-ink-950 hover:bg-tan-400; }
+@utility btn-ghost { @apply btn border border-ink-100 bg-white text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-850 dark:text-ink-100 dark:hover:bg-ink-800; }
+@utility btn-danger { @apply btn bg-red-600 text-white hover:bg-red-500; }
+@utility btn-sm { @apply px-2.5 py-1.5 text-xs rounded-lg; }
+@utility chip { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium; }
+@utility chip-ok { @apply chip bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400; }
+@utility chip-warn { @apply chip bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400; }
+@utility chip-bad { @apply chip bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400; }
+@utility chip-info { @apply chip bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400; }
+@utility chip-mute { @apply chip bg-ink-50 text-ink-500 dark:bg-ink-800 dark:text-ink-300; }
+@utility chip-tan { @apply chip bg-tan-50 text-tan-700 dark:bg-tan-500/10 dark:text-tan-400; }
+@utility input { @apply w-full rounded-xl border border-ink-100 bg-white px-3 py-2 text-sm text-ink-800 placeholder:text-ink-300 focus:border-tan-500 focus:outline-none focus:ring-2 focus:ring-tan-500/20 dark:border-ink-700 dark:bg-ink-850 dark:text-ink-100; }
+@utility nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink-500 transition hover:bg-ink-50 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-white; }
+@utility tbl { @apply w-full text-left text-sm; }
+@utility switch { @apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-ink-200 transition dark:bg-ink-700; }
+@utility seg { @apply inline-flex rounded-xl border border-ink-100 bg-ink-50 p-1 dark:border-ink-700 dark:bg-ink-850; }
+@utility tip { @apply pointer-events-none absolute z-20 min-w-36 rounded-xl border border-ink-100 bg-white px-3 py-2 text-xs shadow-lg dark:border-ink-700 dark:bg-ink-850; }
+
+@layer components {
+  .nav-link.active { @apply bg-tan-50 text-tan-700 dark:bg-tan-500/10 dark:text-tan-400; }
+  .tbl th { @apply border-b border-ink-100 px-4 py-3 text-xs font-medium uppercase tracking-wider text-ink-400 dark:border-ink-800 dark:text-ink-300; }
+  .tbl td { @apply border-b border-ink-50 px-4 py-3 align-middle dark:border-ink-800/70; }
+  .tbl tr:last-child td { @apply border-b-0; }
+  .tbl tbody tr { @apply transition hover:bg-ink-50/60 dark:hover:bg-ink-850; }
+  .switch[aria-checked="true"] { @apply bg-tan-500; }
+  .switch span { @apply inline-block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition; }
+  .switch[aria-checked="true"] span { @apply translate-x-5.5; }
+  .seg button { @apply rounded-lg px-3 py-1.5 text-xs font-medium text-ink-500 transition dark:text-ink-300; }
+  .seg button.on { @apply bg-white text-ink-900 shadow-sm dark:bg-ink-700 dark:text-white; }
+  .md h1 { @apply mb-4 text-xl font-semibold text-ink-900 dark:text-white; }
+  .md h3 { @apply mt-6 mb-2 text-sm font-semibold text-tan-700 dark:text-tan-400; }
+  .md p { @apply my-2 leading-relaxed; }
+  .md pre { @apply my-2 max-h-72 overflow-auto rounded-xl bg-ink-50 p-3 font-mono text-xs leading-relaxed text-ink-600 dark:bg-ink-950 dark:text-ink-300; }
+  .md blockquote { @apply my-1 border-l-2 border-tan-300 pl-3 font-mono text-xs text-ink-500 dark:border-tan-700 dark:text-ink-300; }
+  .md code { @apply rounded bg-ink-50 px-1 font-mono text-[0.85em] dark:bg-ink-800; }
+  .md ul { @apply my-2 list-disc pl-6; }
+}
+
+@keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.85); } }
+.live-dot { animation: pulse-dot 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } * { transition: none !important; } }

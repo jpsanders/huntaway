@@ -1,0 +1,489 @@
+.TH HUNTAWAY 1 "" "huntaway" "User Commands"
+.SH NAME
+huntaway \- the sheepdog for your AI agents
+.SH SYNOPSIS
+.PP
+\fBhuntaway\fR [\fICOMMAND\fR] [\fIOPTIONS\fR]
+.PP
+\fBhuntaway status\fR | \fBtop\fR | \fBagents\fR | \fBsessions\fR | \fBevents\fR | \fBwhy\fR | \fBscan\fR | \fBconfig\fR | \fBservice\fR | \fBdaemon\fR | \fBui\fR | \fBtoken\fR | \fBmcp\fR | \fBintegrate\fR | \fBrun\fR | \fBjudge\fR | \fBdoctor\fR | \fBdemo\fR | \fBguide\fR | \fBman\fR
+.SH DESCRIPTION
+.PP
+huntaway is a small background service for a machine where AI coding agents run. It does four jobs.
+.PP
+It saves and closes agent sessions left idle. Claude Code, Codex, OpenCode, Gemini CLI, Aider and others each hold hundreds of megabytes while they wait in a terminal. huntaway finds them, saves the full transcript and checks the copy byte for byte, closes the session, and prints the command that resumes it in its own terminal. Nothing is lost.
+.PP
+It keeps the machine from freezing. When memory runs out it acts before the kernel does: idle agent sessions are saved and closed first, then the biggest process that is not protected is asked to stop. Processes that hold the CPU for long are dropped to the lowest priority instead of being killed.
+.PP
+It hunts. Quick checks run every few hours without root: new lines in shell start files, new cron jobs and SSH keys, programs running from temporary folders, miners, ports open to the network, keys readable by other users, and agent CLIs started with their permission checks off by something without a terminal. Deep scans with rkhunter, chkrootkit, ClamAV and Lynis run as root on demand or weekly.
+.PP
+It explains itself. Every action is recorded with the numbers that triggered it. A dashboard on localhost shows the machine live, the agent sessions, a year of history, saved transcripts with full text search, security findings and every setting. An MCP server and a skill let agents ask the same questions.
+.PP
+huntaway is light: one Python process, one dependency (psutil), about 30 MB of memory, and a few milliseconds of CPU per sample.
+.SH QUICK START
+.RS 4
+.nf
+uv tool install git+https://github.com/jpsanders/huntaway   # or: pipx install git+https://...
+huntaway service install \-\-observe    # start in observe mode: it records, it never acts
+huntaway ui                           # open the dashboard
+huntaway integrate                    # give your agents the MCP server and the skill
+huntaway config set general.mode enforce   # when you trust what it would have done
+.fi
+.RE
+.PP
+\fBhuntaway demo\fR serves the dashboard on made up data without installing anything.
+.SH COMMANDS
+.PP
+Every command that reads takes \fB\-\-json\fR. Every command works whether the service runs or not: without it, the work happens in the calling process. \fB\-\-local\fR forces that.
+.SS status
+.PP
+Machine health at a glance: CPU, memory, swap, pressure stalls, temperature and disk, the agent sessions and how much memory the stale ones hold, security findings by severity, what huntaway itself costs, and the latest actions. \fBhuntaway\fR with no command runs \fBstatus\fR.
+.SS top [--mem] [--limit N]
+.PP
+The busiest processes, by CPU or by memory with \fB\-\-mem\fR, with the agent each belongs to and the reason it is protected, if it is.
+.SS agents [list|save|close|reap|pin|unpin] [ID] [--all] [--yes]
+.PP
+\fBagents\fR lists the interactive agent sessions: harness, title, status (working, idle, waiting for you), idle time, memory, and whether it is stale. \fB\-\-all\fR adds sessions without a terminal, such as headless runs.
+.PP
+\fBagents save ID\fR saves a session now and leaves it running. \fBagents close ID\fR saves it, checks the save, then closes it; it asks first unless \fB\-\-yes\fR is given. \fBagents reap\fR lists the stale sessions; \fBagents reap \-\-yes\fR saves and closes all of them. \fBagents pin ID\fR keeps a session open forever; \fBunpin\fR undoes it.
+.PP
+ID is the session id, \fBharness:session\fR as listed, or the process id.
+.SS sessions [WORDS] | show ID | restore ID [--force] | delete ID | backup
+.PP
+\fBsessions\fR lists saved sessions, newest first. \fBsessions WORDS\fR searches every saved transcript and shows the best matches with the passage that matched. \fB\-\-harness\fR narrows to one harness.
+.PP
+\fBsessions show ID\fR prints the readable transcript and the resume command. \fBsessions restore ID\fR puts the raw files back where the harness keeps them, so the resume command works even after the harness deleted its own copy; it never overwrites a file unless \fB\-\-force\fR is given. \fBsessions delete ID\fR removes a saved session from the archive. \fBsessions backup\fR saves every transcript on disk now.
+.SS events [--kind KINDS] [--limit N] [-f]
+.PP
+What huntaway did and saw, newest first. KINDS is a comma separated list of close, terminate, kill, throttle, alert, archive, judge, config and service. \fB\-f\fR keeps printing new events.
+.SS why PID|NAME
+.PP
+Explains what huntaway did to a process. When a process died with exit code 137 and you wonder who killed it, this is the first thing to run. If huntaway did not touch it, it says so and points at the kernel log.
+.SS scan [--deep] [--only LIST] [--refresh-baseline] [-v] | scan setup | scan schedule [--calendar WHEN]
+.PP
+\fBscan\fR runs the quick checks now and lists every finding. \fB\-v\fR shows the detail. \fBsudo huntaway scan \-\-deep\fR runs the deep scanners that are installed and writes a report to \fB/var/lib/huntaway/scans\fR, which the service picks up within five minutes. \fB\-\-only\fR picks scanners, for example \fB\-\-only rkhunter,clamav\fR. \fB\-\-refresh\-baseline\fR refreshes rkhunter's file properties first, which is right after a system update you trust.
+.PP
+ClamAV reads Downloads, \fB~/.local/bin\fR, autostart entries, the temporary folders and every file in the home folder changed in the last seven days, skipping caches. That takes minutes where a full home scan can take a day. \fBsecurity.clamav_paths\fR replaces that set.
+.PP
+\fBscan setup\fR says which scanners are missing and prints the command that installs them. \fBsudo huntaway scan schedule\fR installs a systemd timer that runs the deep scan weekly at low priority.
+.PP
+Exit status 4 means a serious finding (high or critical) is open.
+.SS config [show|get|set|edit|path|validate|reset] [KEY] [VALUE]
+.PP
+\fBconfig\fR shows every option and marks the changed ones. \fBconfig get KEY\fR prints one value. \fBconfig set KEY VALUE\fR validates and saves it; the service applies it within seconds. Lists take JSON (\fB'["a", "b"]'\fR) or commas (\fBa,b\fR). \fBconfig edit\fR opens the file in \fB$VISUAL\fR or \fB$EDITOR\fR. \fBconfig validate\fR checks the file. \fBconfig reset\fR writes the defaults and keeps the old file as \fBconfig.toml.old\fR.
+.SS service install|uninstall|start|stop|restart|status|logs
+.PP
+\fBservice install\fR writes a systemd user unit on Linux or a launch agent on macOS, enables and starts it, and installs the man page. No root is needed. \fB\-\-observe\fR installs in observe mode. \fBservice uninstall\fR stops and removes it and keeps settings, history and saved sessions. \fBservice logs\fR prints the service log.
+.SS daemon [--host HOST] [--port PORT] [--observe]
+.PP
+Runs the service in the foreground. The unit runs this.
+.SS ui [--print]
+.PP
+Opens the dashboard in a browser, signed in. \fB\-\-print\fR prints the URL with its token instead.
+.SS token [--rotate]
+.PP
+Prints the API token. \fB\-\-rotate\fR makes a new one; restart the service afterwards.
+.SS mcp
+.PP
+Serves the MCP server over stdio. Harnesses start this; see FOR AGENTS.
+.SS integrate [HARNESS...] [--dry-run] [--agents-md]
+.PP
+Registers the MCP server and installs the skill for Claude Code (every config folder, including extra accounts), Codex, OpenCode, Gemini CLI and Cursor, or the harnesses named. It uses each harness's own CLI where there is one, because those harnesses rewrite their config files while they run, and backs up any file it edits. \fB\-\-dry\-run\fR shows what would change. \fB\-\-agents\-md\fR prints a paragraph for AGENTS.md or CLAUDE.md for tools without MCP.
+.SS run [--cpu QUOTA] [--memory SIZE] [--nice N] -- COMMAND...
+.PP
+Runs a heavy command capped instead of stopped. The command gets its own systemd scope with a memory ceiling (default 70% of RAM, \fBnone\fR for no ceiling) and an optional CPU quota (\fB200%\fR is two cores), at a lower priority. A lease tells the service the work is expected, so the CPU rules leave it alone. The exit code is the command's.
+.SS judge [show|off|advise|veto|ask PID] [--model NAME] [--url URL]
+.PP
+Turns the optional LLM judge on or off (\fBon\fR means \fBveto\fR), sets its model and endpoint, or asks it about a process. See THE LLM JUDGE.
+.SS doctor
+.PP
+Checks this machine and says what is missing: the service, Python, pressure stall information, systemd, PipeWire for call detection, notifications, tmux, zstd, the deep scanners and the skill.
+.SS demo [--port PORT] [--no-open]
+.PP
+Serves the dashboard on made up data in a temporary folder. Nothing on the machine is read or touched.
+.SS guide
+.PP
+Prints this manual as Markdown, which suits agents.
+.SS man
+.PP
+Shows this manual as a man page.
+.SH HOW IT DECIDES
+.SS Memory
+.PP
+Memory is critical when available memory is below \fBmemory.min_available_percent\fR and free swap is below \fBmemory.min_swap_free_percent\fR, or when the kernel reports that tasks stalled on memory for more than \fBmemory.pressure_full\fR percent of the last ten seconds. It is tight below twice that floor. While memory is short huntaway samples every second.
+.PP
+When memory stays critical for \fBmemory.sustain\fR seconds, huntaway picks one victim. With \fBmemory.prefer_idle_agents\fR, an idle agent session goes first, sessions idle past \fBagents.pressure_idle_minutes\fR before others, biggest first: it is saved and closed, so nothing is lost. Otherwise the process holding the most memory goes, skipping protected processes, processes under \fBmemory.min_victim_mb\fR, busy agent sessions and leased work until nothing else is left. It gets SIGTERM, and SIGKILL \fBmemory.grace\fR seconds later. huntaway then waits a few seconds for the memory to come back before it judges again.
+.PP
+\fBmemory.process_max_percent\fR stops any single process holding more than that share of RAM.
+.SS CPU
+.PP
+A process at or above \fBcpu.process_percent\fR (100 is one full core) for \fBcpu.sustain\fR seconds is a hog, but only while the whole machine is at least \fBcpu.system_percent\fR busy: a hog on an idle machine harms nobody. The default action, throttle, drops every thread of the process to the lowest CPU priority and its disk priority to idle. It keeps running, and nobody notices until something else needs the CPU. An unprivileged user cannot raise a priority back, so a throttled process stays low until it exits.
+.SS Rules
+.PP
+Rules give matching processes their own limits. Each one has a regular expression over the process name or full command line, optional \fBcpu_percent\fR and \fBmemory_mb\fR limits, how long the limit must be passed (\fBsustain\fR) and an action: throttle, terminate, kill or notify. A rule without limits acts on any match after \fBsustain\fR seconds.
+.RS 4
+.nf
+[[rules]]
+name = "dev servers"
+match = "node .*(vite|next dev|webpack)"
+memory_mb = 4096
+sustain = 30
+action = "terminate"
+
+[[rules]]
+name = "Windows programs"
+match = "\e\e.exe$"
+sustain = 0
+action = "kill"
+.fi
+.RE
+.SS Protection
+.PP
+Some processes are never touched: process 1 and kernel threads, huntaway and its parents, other users' processes, and a built in list covering desktops (GNOME, KDE, sway, Hyprland and others), display servers, sound (PipeWire, PulseAudio), terminals and multiplexers (closing one closes every tab inside it), ssh, keyrings and password managers, and Zoom and Teams. \fBprotect.names\fR and \fBprotect.patterns\fR add to that. With \fBprotect.calls\fR, any browser or app holding the microphone or camera is protected while it does, so a call is never cut. Processes started with \fBhuntaway run\fR are left to the memory rules only.
+.PP
+Every action checks that the process is still the one judged, by process id and start time, so a reused process id is never hit.
+.SS Observe mode
+.PP
+With \fBgeneral.mode = "observe"\fR huntaway records what it would have done, as events, and changes nothing. It saves nothing either. Start here, read the events for a few days, then switch to enforce.
+.SH AGENT SESSIONS
+.SS Finding them
+.PP
+huntaway knows Claude Code, Codex, OpenCode, Gemini CLI, Qwen Code, Aider, Cursor Agent, Goose, Amp, Copilot CLI, Crush and Kiro by their process names, and by their packages when they run under node, bun or python. \fBagents.extra\fR adds more names. A launcher wrapping a binary counts as one session, and the memory shown is the whole process tree.
+.PP
+For Claude Code, huntaway reads the session file Claude Code keeps per process (\fBsessions/<pid>.json\fR in its config folder, \fB$CLAUDE_CONFIG_DIR\fR or \fB~/.claude\fR), which gives the session id, the folder and whether it is working, idle or waiting for an answer. For Codex it matches the rollout file by folder and start time. OpenCode is asked for its sessions through its own CLI.
+.SS When a session is stale
+.PP
+A session is stale when it is interactive (it has a terminal), it is not working, it is not pinned, and its last activity is older than \fBagents.idle_hours\fR. Activity is the newest of: the last message in its transcript, the last status change its harness recorded, the last time it used real CPU, and, for harnesses without a transcript, the last keystroke in its terminal. Idle sessions keep appending bookkeeping lines without timestamps to their transcripts, so huntaway reads the newest timestamped message rather than the file's modification time.
+.PP
+Sessions waiting on a question count as stale after the same time unless \fBagents.include_waiting\fR is false. Headless runs (no terminal) are never closed: they are doing a job.
+.SS Closing one
+.PP
+huntaway saves the session, then checks the copy: every file is compressed, read back and compared with the bytes it read, by SHA-256. If anything fails, the session stays open and the failure is an event. Then the process gets SIGTERM and, after the grace time, SIGKILL. With \fBagents.tty_note\fR, the session's terminal then shows where it was saved and the command that resumes it, for example \fBcd ~/code/api && claude \-\-resume 0b6f...\fR. An agent can never close the session it runs in.
+.SS The archive
+.PP
+Each saved session is a folder under \fBsessions.archive_dir\fR (default \fB~/.local/share/huntaway/sessions\fR):
+.RS 4
+.nf
+claude/<session id>/
+  raw/...              the original files, compressed with zstd (gzip where Python lacks zstd)
+  transcript.md        every prompt and reply, tool calls on one line each, tool output trimmed
+  screen.txt           the terminal scrollback, when the session ran in tmux
+  manifest.json        what was saved, from where, with each file's SHA\-256
+  RESUME.txt           how to resume it
+.fi
+.RE
+.PP
+Transcripts are indexed for full text search. \fBsessions.backup\fR also saves every transcript the harnesses left on disk every \fBsessions.backup_hours\fR, open or not. Claude Code deletes its own transcripts after 30 days by default; with backup on, nothing is ever lost.
+.SH SECURITY
+.PP
+The quick checks need no root and run every \fBsecurity.quick_hours\fR. The first run takes a baseline; later runs report what is new.
+.IP \(bu 2
+shell: new or changed shell start files (\fB.bashrc\fR, \fB.zshrc\fR, \fB.profile\fR and others), and risky lines in them: shutdown commands, \fBcurl | sh\fR, \fBbase64 \-d | sh\fR, \fB/dev/tcp\fR, \fBnc \-e\fR, \fBLD_PRELOAD\fR.
+.IP \(bu 2
+persistence: new cron lines, autostart entries, systemd user units, launch agents and SSH authorized keys.
+.IP \(bu 2
+processes: miners, programs running from \fB/tmp\fR, \fB/var/tmp\fR or \fB/dev/shm\fR, programs whose file was deleted, and Windows programs.
+.IP \(bu 2
+listeners: ports newly open to the network.
+.IP \(bu 2
+credentials: SSH keys, cloud credentials and agent tokens readable by other users.
+.IP \(bu 2
+agents: agent CLIs running with their permission checks off. Without a terminal this is high severity: the s1ngularity supply chain attack of 2025 ran local agent CLIs this way to search the disk for secrets.
+.PP
+Deep scans parse rkhunter, chkrootkit, ClamAV and Lynis output into the same findings. rkhunter's usual false alarms are marked as such: changed file properties after a package update are low, and well known hidden files are notes. Lynis adds a hardening index from 0 to 100.
+.PP
+\fBsecurity.ignore\fR hides findings by id or by a regular expression over the title. The dashboard's Ignore button adds to it.
+.SH THE LLM JUDGE
+.PP
+The judge is off by default. When it is on, a language model reviews a decision before huntaway ends a process.
+.IP \(bu 2
+advise: the rules act as usual, and the model's view is recorded next to the action.
+.IP \(bu 2
+veto: before a terminate or kill decided by the CPU rules, a cap or a rule, the model may spare the process; it is then left alone for ten minutes. With no answer within \fBjudge.timeout\fR, the rules decide.
+.PP
+The judge can never end a process, only spare one, so a wrong or manipulated answer can at most leave a process running, which is what happens without huntaway. Memory emergencies never wait for it. Calls run on their own thread, so a slow model never delays sampling. Process names and command lines are written by whoever started the process, so they reach the model as quoted data with control characters removed, and the model is told they are untrusted.
+.PP
+Any OpenAI compatible endpoint works. The default endpoint is a local Ollama, so nothing leaves the machine:
+.RS 4
+.nf
+huntaway judge veto \-\-model qwen3:4b
+huntaway judge veto \-\-model gpt\-5\-mini \-\-url https://api.openai.com/v1
+huntaway config set judge.api_key_env OPENAI_API_KEY
+huntaway judge ask 4242
+huntaway judge off
+.fi
+.RE
+.SH THE DASHBOARD
+.PP
+The service serves a dashboard at \fBhttp://127.0.0.1:4868\fR (4868 spells HUNT on a phone keypad). Pages: Overview (live charts, agent sessions, biggest processes, recent actions), Agents, Analytics (CPU, memory and swap, pressure stalls, memory held by agents, disk, network and temperature, from 15 minutes to a year; the top apps; a weekday by hour heatmap; actions per day), Saved sessions with search, Security, Events, Rules and protection (with the judge), Settings (every option, generated from the schema) and Integrations.
+.PP
+On 127.0.0.1 the page carries the API token, so the browser on the machine needs nothing; the server refuses requests whose Host header names another site, which stops DNS rebinding. With \fBserver.host = "0.0.0.0"\fR the dashboard is open to the network and every request needs the token (\fBhuntaway token\fR). Cross origin POSTs are refused. Prometheus metrics are at \fB/metrics\fR.
+.SH FOR AGENTS
+.SS The MCP server
+.PP
+\fBhuntaway integrate\fR registers it. By hand, for any MCP client:
+.RS 4
+.nf
+{"mcpServers": {"huntaway": {"command": "huntaway", "args": ["mcp"]}}}
+.fi
+.RE
+.PP
+It is also served over HTTP at \fBhttp://127.0.0.1:4868/mcp\fR, with the token as a bearer header. Tools:
+.TP
+\fBstatus\fR
+Machine health, agents, findings and recent actions
+.TP
+\fBtop_processes\fR
+The busiest processes and what protects each
+.TP
+\fBlist_agent_sessions\fR
+Agent sessions with idle time, memory and the stale verdict
+.TP
+\fBsave_agent_session\fR
+Save a session now, without closing it
+.TP
+\fBclose_agent_session\fR
+Save, check, then close a session
+.TP
+\fBclose_stale_sessions\fR
+Close every stale session; dry_run (the default) only lists them
+.TP
+\fBpin_agent_session\fR
+Keep a session open forever, or unpin it
+.TP
+\fBsearch_saved_sessions\fR
+Full text search across every saved transcript
+.TP
+\fBread_saved_session\fR
+Read a saved transcript, in pages
+.TP
+\fBrestore_saved_session\fR
+Put a session's files back so it can be resumed
+.TP
+\fBevents\fR
+What huntaway did and why
+.TP
+\fBanalytics\fR
+History for charts, top apps, heatmap
+.TP
+\fBsecurity_findings\fR
+Findings and scanner state
+.TP
+\fBrun_security_checks\fR
+Run the quick checks now
+.TP
+\fBget_settings\fR
+Every setting with its schema
+.TP
+\fBchange_settings\fR
+Change settings
+.TP
+\fBact_on_process\fR
+Throttle, terminate, kill or protect one process
+.PP
+Tools that change things carry the MCP destructive hint, so harnesses ask before calling them.
+.SS The skill
+.PP
+\fBhuntaway integrate\fR installs a skill (\fBSKILL.md\fR) into Claude Code, Codex and OpenCode. It tells an agent when to reach for huntaway: a slow machine, a process that died with 137, a heavy build to run, or old work to find.
+.SS Rules for agents
+.IP \(bu 2
+Before a heavy job, run \fBhuntaway status\fR. Wrap long builds and test suites in \fBhuntaway run \-\- COMMAND\fR.
+.IP \(bu 2
+When a process died with exit code 137, run \fBhuntaway why NAME\fR before guessing.
+.IP \(bu 2
+To find earlier work, run \fBhuntaway sessions "WORDS"\fR and \fBhuntaway sessions show ID\fR.
+.IP \(bu 2
+Say what you will close or stop before doing it. Never close a session the user is working in.
+.SH CONFIGURATION
+.PP
+The settings live in \fB~/.config/huntaway/config.toml\fR (on macOS, \fB~/Library/Application Support/huntaway\fR). The file documents every option; options left commented out keep their default. The service reloads the file within seconds of a change, and refuses an invalid one with an event and a notification, keeping the old settings.
+.SS [general]
+.PP
+How often huntaway looks, and whether it acts or only records what it would do.
+.IP \(bu 2
+\fBinterval\fR (default \fB5\fR): Seconds between samples. huntaway samples every second while memory is short.
+.IP \(bu 2
+\fBmode\fR (default \fB"enforce"\fR): enforce acts on the rules. observe only records what it would have done. One of: enforce, observe.
+.IP \(bu 2
+\fBnotify\fR (default \fBtrue\fR): Show a desktop notification for every action.
+.IP \(bu 2
+\fBwebhook\fR (default \fB""\fR): Also POST every action to this URL. ntfy, Slack and Discord webhooks are recognised, anything else gets JSON.
+.SS [memory]
+.PP
+Keeps the machine from freezing when memory runs out, the way earlyoom does, but agent aware.
+.IP \(bu 2
+\fBenabled\fR (default \fBtrue\fR): Act before the machine runs out of memory.
+.IP \(bu 2
+\fBmin_available_percent\fR (default \fB6.0\fR): Act when available memory falls below this share of RAM...
+.IP \(bu 2
+\fBmin_swap_free_percent\fR (default \fB10.0\fR): ...while free swap is below this share. A machine without swap counts as having none free.
+.IP \(bu 2
+\fBpressure_full\fR (default \fB40.0\fR): Also act when the kernel's memory pressure (PSI full avg10) passes this percent, whatever the free memory says. 0 turns it off. Linux only.
+.IP \(bu 2
+\fBsustain\fR (default \fB4\fR): Seconds the shortage must last before huntaway acts.
+.IP \(bu 2
+\fBgrace\fR (default \fB5\fR): Seconds between asking a process to stop (SIGTERM) and forcing it (SIGKILL).
+.IP \(bu 2
+\fBprefer_idle_agents\fR (default \fBtrue\fR): When memory is short, save and close idle agent sessions before ending anything else. Nothing is lost: each one can be resumed.
+.IP \(bu 2
+\fBmin_victim_mb\fR (default \fB64\fR): Never end a process holding less memory than this, it would not help.
+.IP \(bu 2
+\fBprocess_max_percent\fR (default \fB0.0\fR): End any single process holding more than this share of RAM for the sustain time. 0 turns it off.
+.SS [cpu]
+.PP
+Calms processes that hold the CPU for a long time.
+.IP \(bu 2
+\fBenabled\fR (default \fBtrue\fR): Act on processes that hold the CPU.
+.IP \(bu 2
+\fBprocess_percent\fR (default \fB95.0\fR): A process at or above this CPU use counts as a hog. 100 is one full core, so a process on four cores reads 400.
+.IP \(bu 2
+\fBsystem_percent\fR (default \fB85.0\fR): Only act while the whole machine is at least this busy. A hog on an otherwise idle machine harms nobody. 0 acts regardless.
+.IP \(bu 2
+\fBsustain\fR (default \fB30\fR): Seconds a process must stay a hog before huntaway acts.
+.IP \(bu 2
+\fBaction\fR (default \fB"throttle"\fR): throttle drops the process to the lowest CPU and disk priority, which nobody notices until something else needs the CPU. terminate and kill end it. notify only tells you. One of: throttle, terminate, kill, notify.
+.SS [agents]
+.PP
+Finds AI agent sessions (Claude Code, Codex, OpenCode, Gemini CLI, Aider and more).
+.IP \(bu 2
+\fBenabled\fR (default \fBtrue\fR): Find AI agent sessions and show what they hold.
+.IP \(bu 2
+\fBreap\fR (default \fBtrue\fR): Save and close interactive agent sessions left idle. Each one is archived and verified first, and its terminal shows the command that resumes it.
+.IP \(bu 2
+\fBidle_hours\fR (default \fB12.0\fR): A session counts as stale after this many hours without a message, a keystroke or CPU work.
+.IP \(bu 2
+\fBpressure_idle_minutes\fR (default \fB30.0\fR): While memory is short, sessions idle this many minutes are closed first.
+.IP \(bu 2
+\fBinclude_waiting\fR (default \fBtrue\fR): Also close sessions that have waited on a question for you for the full idle time.
+.IP \(bu 2
+\fBtty_note\fR (default \fBtrue\fR): After closing a session, print its resume command in its own terminal.
+.IP \(bu 2
+\fBpinned\fR (default \fB[]\fR): Session ids, or process ids, that are never closed. The dashboard's pin button adds to this list.
+.IP \(bu 2
+\fBextra\fR (default \fB[]\fR): More process names to treat as agent sessions, for harnesses huntaway does not know yet. They are listed and closed, and their tmux scrollback is saved.
+.SS [sessions]
+.PP
+The archive of saved agent sessions.
+.IP \(bu 2
+\fBarchive_dir\fR (default \fB""\fR): Where saved sessions go. Empty means the data folder.
+.IP \(bu 2
+\fBcompress\fR (default \fBtrue\fR): Compress saved transcripts (zstd where Python has it, gzip otherwise).
+.IP \(bu 2
+\fBbackup\fR (default \fBfalse\fR): Every few hours, also save every transcript the agents left on disk, open or not. Claude Code deletes its own after 30 days by default.
+.IP \(bu 2
+\fBbackup_hours\fR (default \fB6.0\fR): Hours between backup passes.
+.SS [protect]
+.PP
+Processes huntaway never touches.
+.IP \(bu 2
+\fBnames\fR (default \fB[]\fR): Process names never touched, on top of the built in list (desktop, audio, terminals, ssh, password managers, call apps).
+.IP \(bu 2
+\fBpatterns\fR (default \fB[]\fR): Regular expressions matched against the full command line. A match is never touched.
+.IP \(bu 2
+\fBcalls\fR (default \fBtrue\fR): Protect browsers and call apps while they hold the microphone or camera, so a call is never cut. Linux with PipeWire.
+.SS [security]
+.PP
+Built in quick checks and deep scans (rkhunter, chkrootkit, ClamAV, Lynis).
+.IP \(bu 2
+\fBenabled\fR (default \fBtrue\fR): Run the built in quick checks.
+.IP \(bu 2
+\fBquick_hours\fR (default \fB6.0\fR): Hours between quick checks.
+.IP \(bu 2
+\fBignore\fR (default \fB[]\fR): Finding ids, or regular expressions over the finding title, to hide.
+.IP \(bu 2
+\fBclamav_paths\fR (default \fB[]\fR): Folders the deep ClamAV scan covers. Empty means Downloads, the temporary folders and files changed in the last 7 days.
+.SS [judge]
+.PP
+An optional language model that reviews a decision before huntaway ends a process. Off by default.
+.IP \(bu 2
+\fBmode\fR (default \fB"off"\fR): off: no model is ever called. advise: the model's view is recorded next to each action. veto: the model may spare a process the rules would end. It can never end one. One of: off, advise, veto.
+.IP \(bu 2
+\fBbase_url\fR (default \fB"http://localhost:11434/v1"\fR): Any OpenAI compatible endpoint. The default is a local Ollama, so nothing leaves the machine.
+.IP \(bu 2
+\fBmodel\fR (default \fB""\fR): The model name, for example qwen3:4b on Ollama.
+.IP \(bu 2
+\fBapi_key_env\fR (default \fB""\fR): Name of the environment variable that holds the API key. Leave empty for a local server.
+.IP \(bu 2
+\fBtimeout\fR (default \fB20.0\fR): Seconds to wait for a verdict. With no verdict in time the rules decide.
+.SS [server]
+.PP
+The dashboard and the API.
+.IP \(bu 2
+\fBenabled\fR (default \fBtrue\fR): Serve the dashboard and the API.
+.IP \(bu 2
+\fBhost\fR (default \fB"127.0.0.1"\fR): 127.0.0.1 keeps the dashboard on this machine. 0.0.0.0 opens it to your LAN, and every request then needs the token.
+.IP \(bu 2
+\fBport\fR (default \fB4868\fR): The port. 4868 spells HUNT on a phone keypad.
+.IP \(bu 2
+\fBmetrics\fR (default \fBtrue\fR): Serve Prometheus metrics at /metrics.
+.SS [retention]
+.PP
+How long history is kept.
+.IP \(bu 2
+\fBraw_hours\fR (default \fB24\fR): Keep full resolution samples this many hours.
+.IP \(bu 2
+\fBminute_days\fR (default \fB14\fR): Keep one minute averages this many days.
+.IP \(bu 2
+\fBhour_days\fR (default \fB400\fR): Keep hourly averages this many days.
+.IP \(bu 2
+\fBevents_days\fR (default \fB365\fR): Keep events and findings this many days.
+.SH FILES
+.IP \(bu 2
+\fB~/.config/huntaway/config.toml\fR: the settings.
+.IP \(bu 2
+\fB~/.local/share/huntaway/huntaway.db\fR: history, events, the session index and findings (SQLite).
+.IP \(bu 2
+\fB~/.local/share/huntaway/sessions/\fR: the archive of saved sessions.
+.IP \(bu 2
+\fB~/.local/state/huntaway/token\fR: the API token, mode 600.
+.IP \(bu 2
+\fB$XDG_RUNTIME_DIR/huntaway/leases/\fR: leases from \fBhuntaway run\fR.
+.IP \(bu 2
+\fB/var/lib/huntaway/scans/\fR: deep scan reports written as root.
+.IP \(bu 2
+\fB~/.config/systemd/user/huntaway.service\fR: the service unit on Linux.
+.IP \(bu 2
+\fB~/Library/LaunchAgents/io.github.jpsanders.huntaway.plist\fR: the launch agent on macOS.
+.SH ENVIRONMENT
+.IP \(bu 2
+\fBHUNTAWAY_CONFIG_DIR\fR, \fBHUNTAWAY_DATA_DIR\fR, \fBHUNTAWAY_STATE_DIR\fR: override the folders above.
+.IP \(bu 2
+\fBXDG_CONFIG_HOME\fR, \fBXDG_DATA_HOME\fR, \fBXDG_STATE_HOME\fR, \fBXDG_RUNTIME_DIR\fR: respected on Linux.
+.IP \(bu 2
+\fBCLAUDE_CONFIG_DIR\fR, \fBCODEX_HOME\fR: read from each agent process, so every account is found.
+.IP \(bu 2
+\fBNO_COLOR\fR: plain output.
+.SH EXIT STATUS
+.IP \(bu 2
+0: done.
+.IP \(bu 2
+1: failed.
+.IP \(bu 2
+2: bad usage or an invalid value.
+.IP \(bu 2
+3: the service is not running (\fBservice status\fR, \fBui\fR).
+.IP \(bu 2
+4: a serious security finding is open (\fBscan\fR).
+.IP \(bu 2
+127: \fBrun\fR could not find the command. Otherwise \fBrun\fR exits with the command's own status.
+.SH EXAMPLES
+.RS 4
+.nf
+huntaway agents reap                  # which sessions are stale, and how much they hold
+huntaway agents reap \-\-yes            # save and close them
+huntaway sessions "stripe webhook"    # find the session where that was fixed
+huntaway sessions show claude:0b6f2c  # read it, with the resume command
+huntaway why node                     # what happened to my dev server?
+huntaway run \-\-memory 8G \-\- cargo build \-\-release
+huntaway config set agents.idle_hours 6
+huntaway events \-f                    # watch huntaway work
+sudo huntaway scan \-\-deep \-\-only rkhunter,clamav
+.fi
+.RE
+.SH SEE ALSO
+.PP
+earlyoom(1), systemd-oomd(8), rkhunter(8), chkrootkit(1), clamscan(1), lynis(8), systemd-run(1)
+.PP
+Project page: https://github.com/jpsanders/huntaway
+.SH AUTHOR
+.PP
+James Phillip Sanders. MIT licence.
