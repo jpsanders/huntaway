@@ -1,6 +1,7 @@
 """The parts that act: process actions, the service loop, the unit installer, deep scans and more commands."""
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -128,7 +129,7 @@ def test_process_action_refuses_protected_and_missing(cfg, store):
     with pytest.raises(ApiError, match="no process"):
         call(core, "process_action", {"pid": 10**7, "action": "kill"})
     with pytest.raises(ApiError, match="protected"):
-        call(core, "process_action", {"pid": 1, "action": "kill"})
+        call(core, "process_action", {"pid": os.getpid(), "action": "kill"})
 
 
 def test_reload_picks_up_a_changed_file(cfg, store):
@@ -136,8 +137,6 @@ def test_reload_picks_up_a_changed_file(cfg, store):
     core = Core(config.load(cfg.path), store)
     time.sleep(0.01)
     config.save(config.set_value(cfg, "cpu.sustain", 99), cfg.path)
-    import os
-
     os.utime(cfg.path, (time.time() + 5, time.time() + 5))
     core._maybe_reload()
     assert core.cfg["cpu.sustain"] == 99
