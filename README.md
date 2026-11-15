@@ -1,17 +1,18 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/banner-dark.png">
-    <img alt="huntaway: the sheepdog for your AI agents" src="docs/images/banner-light.png" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jpsanders/huntaway/main/docs/images/banner-dark.png">
+    <img alt="huntaway: the sheepdog for your AI agents" src="https://raw.githubusercontent.com/jpsanders/huntaway/main/docs/images/banner-light.png" width="100%">
   </picture>
 </p>
 
 <p align="center">
   <a href="https://github.com/jpsanders/huntaway/actions/workflows/dev.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/jpsanders/huntaway/dev.yml?branch=main&label=CI&logo=github"></a>
-  <a href="https://github.com/jpsanders/huntaway/releases/latest"><img alt="Release 1.0.0" src="https://img.shields.io/badge/release-1.0.0-e0953f"></a>
+  <a href="https://github.com/jpsanders/huntaway/releases/latest"><img alt="Release 1.0.1" src="https://img.shields.io/badge/release-1.0.1-e0953f"></a>
+  <a href="https://pypi.org/project/huntaway/"><img alt="PyPI huntaway" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpypi.org%2Fpypi%2Fhuntaway%2Fjson&query=%24.info.version&label=pypi&logo=pypi&logoColor=white&color=e0953f"></a>
   <a href="https://www.python.org/"><img alt="Python 3.14 and 3.15" src="https://img.shields.io/badge/python-3.14%20%7C%203.15-3776AB?logo=python&logoColor=white"></a>
-  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue"></a>
+  <a href="https://github.com/jpsanders/huntaway/blob/main/LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue"></a>
   <img alt="Linux and macOS" src="https://img.shields.io/badge/platform-Linux%20%7C%20macOS-111317?logo=linux&logoColor=white">
-  <a href="#for-agents"><img alt="MCP server" src="https://img.shields.io/badge/MCP-server-e0953f"></a>
+  <a href="https://github.com/jpsanders/huntaway#for-agents"><img alt="MCP server" src="https://img.shields.io/badge/MCP-server-e0953f"></a>
   <img alt="One dependency" src="https://img.shields.io/badge/dependencies-1%20(psutil)-2ea44f">
   <a href="https://mypy-lang.org/"><img alt="mypy strict" src="https://img.shields.io/badge/mypy-strict-2a6db2"></a>
   <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000"></a>
@@ -26,14 +27,14 @@ a dashboard on localhost, and gives your agents an MCP server so they can ask it
 One Python process, one dependency, about 40 MB of memory, and 13 ms of CPU each time it looks at 1,500 processes.
 
 ```sh
-uv tool install git+https://github.com/jpsanders/huntaway
+uv tool install huntaway
 huntaway service install --observe && huntaway ui
 ```
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-dark.png">
-    <img alt="The huntaway dashboard: live CPU and memory, agent sessions by harness, stale sessions to close, the biggest processes and recent actions" src="docs/images/dashboard-light.png" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jpsanders/huntaway/main/docs/images/dashboard-dark.png">
+    <img alt="The huntaway dashboard: live CPU and memory, agent sessions by harness, stale sessions to close, the biggest processes and recent actions" src="https://raw.githubusercontent.com/jpsanders/huntaway/main/docs/images/dashboard-light.png" width="100%">
   </picture>
 </p>
 
@@ -76,10 +77,10 @@ It needs Linux, or macOS (newer, and tested in CI only), and Python 3.14 or late
 itself.
 
 ```sh
-uv tool install git+https://github.com/jpsanders/huntaway
+uv tool install huntaway
 ```
 
-or `pipx install git+https://github.com/jpsanders/huntaway`, or the installer, which installs uv when it is missing
+or `pipx install huntaway`, or the installer, which installs uv when it is missing
 and then the service in observe mode:
 
 ```sh
@@ -197,7 +198,7 @@ memory_mb = 4096
 action = "terminate"
 ```
 
-The full guide is `man huntaway`, `huntaway guide`, or [docs/MANUAL.md](docs/MANUAL.md).
+The full guide is `man huntaway`, `huntaway guide`, or [docs/MANUAL.md](https://github.com/jpsanders/huntaway/blob/main/docs/MANUAL.md).
 
 ## Compared with
 
@@ -240,7 +241,7 @@ make demo        # the dashboard on made up data
 ```
 
 The project started from [python-package-template](https://github.com/jpsanders/python-package-template). See
-[CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+[CONTRIBUTING.md](https://github.com/jpsanders/huntaway/blob/main/CONTRIBUTING.md) and [SECURITY.md](https://github.com/jpsanders/huntaway/blob/main/SECURITY.md).
 
 ## Star history
 

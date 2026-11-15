@@ -3,8 +3,18 @@
 # Usage: curl -fsSL https://raw.githubusercontent.com/jpsanders/huntaway/main/install.sh | sh
 set -eu
 
-REF="${HUNTAWAY_REF:-1.0.0}"
-SOURCE="git+https://github.com/jpsanders/huntaway@${REF}"
+# The newest release on PyPI by default. HUNTAWAY_VERSION picks a release; HUNTAWAY_REF installs a git tag,
+# branch or commit from GitHub instead.
+if [ -n "${HUNTAWAY_REF:-}" ]; then
+    SOURCE="git+https://github.com/jpsanders/huntaway@${HUNTAWAY_REF}"
+    LABEL="${HUNTAWAY_REF} from GitHub"
+elif [ -n "${HUNTAWAY_VERSION:-}" ]; then
+    SOURCE="huntaway==${HUNTAWAY_VERSION}"
+    LABEL="${HUNTAWAY_VERSION} from PyPI"
+else
+    SOURCE="huntaway"
+    LABEL="from PyPI"
+fi
 
 say() { printf '%s\n' "$*"; }
 
@@ -15,7 +25,7 @@ if ! command -v uv >/dev/null 2>&1; then
     export PATH
 fi
 
-say "Installing huntaway ${REF}"
+say "Installing huntaway ${LABEL}"
 uv tool install --force "${SOURCE}"
 
 HUNTAWAY="$(command -v huntaway || printf '%s' "${HOME}/.local/bin/huntaway")"

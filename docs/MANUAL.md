@@ -38,7 +38,7 @@ CPU per sample.
 ## QUICK START
 
 ```sh
-uv tool install git+https://github.com/jpsanders/huntaway   # or: pipx install git+https://...
+uv tool install huntaway              # or: pipx install huntaway
 huntaway service install --observe    # start in observe mode: it records, it never acts
 huntaway ui                           # open the dashboard
 huntaway integrate                    # give your agents the MCP server and the skill
